@@ -1,8 +1,8 @@
 ﻿using AddEventToEventGrid;
 using Azure;
-using Azure.Core.Serialization;
 using Azure.Messaging;
 using Azure.Messaging.EventGrid;
+using System.Net.Mime;
 using System.Text.Json;
 
 var client = new EventGridPublisherClient(
@@ -23,17 +23,17 @@ var model = new TeamsNotification
     Url = "test url",
 };
 
-var jsonSerializer = new JsonObjectSerializer(
-    new JsonSerializerOptions()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    });
+var jsonSerializerOptions = new JsonSerializerOptions()
+{
+    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+};
 
 // CloudEvent with custom model serialized to JSON
 var cloudEvent = new CloudEvent(
-    "",
-    "",
-    jsonSerializer.Serialize(model),
-    "application/json");
+    "{topic}",
+    "{type}",
+    BinaryData.FromObjectAsJson(model, jsonSerializerOptions),
+    MediaTypeNames.Application.Json,
+    CloudEventDataFormat.Json);
 
-client.SendEvent(cloudEvent);
+await client.SendEventAsync(cloudEvent);
